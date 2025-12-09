@@ -1,25 +1,59 @@
-import { assert } from '@std/assert'
+import { parseArgs } from '@std/cli/parse-args'
 
 import { scaffold } from './commands/scaffold.ts'
 import { runAll } from './commands/run.ts'
 
+const HELP = `
+Usage: deno run main.ts <command> [options]
+
+Commands:
+  run <year> [day]      Run solutions for a year (optionally filter by day)
+  scaffold <year> <day> Scaffold files for a new day
+
+Options:
+  -h, --help            Show this help message
+`
+
 async function main() {
-  const [command, ...args] = Deno.args
+  const args = parseArgs(Deno.args, {
+    boolean: ['help'],
+    alias: { help: 'h' },
+    stopEarly: true,
+  })
+
+  const [command, ...rest] = args._
+
+  if (args.help || !command) {
+    console.log(HELP.trim())
+    return
+  }
 
   switch (command) {
-    case 'scaffold':
-      assert(args.length === 2, 'Expected exactly 2 arguments: year day')
-      return await scaffold(args)
+    case 'run': {
+      const [year, day] = rest.map(String)
 
-    case 'run':
-      assert(args.length > 1, 'Expected at least 1 argument: year [day]')
-      return await runAll(args)
+      if (!year) {
+        console.error('Error: year is required')
+        Deno.exit(1)
+      }
 
-    case undefined:
-      return console.log('No commands specfied')
+      return await runAll([year, day])
+    }
+
+    case 'scaffold': {
+      const [year, day] = rest.map(String)
+
+      if (!year || !day) {
+        console.error('Error: year and day are required')
+        Deno.exit(1)
+      }
+
+      return await scaffold([year, day])
+    }
 
     default:
-      return console.log(`Unknown command: ${command}`)
+      console.error(`Unknown command: ${command}`)
+      Deno.exit(1)
   }
 }
 

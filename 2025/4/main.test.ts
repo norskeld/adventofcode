@@ -4,10 +4,10 @@ import { one, two } from './main.ts'
 
 const sample = Deno.readTextFileSync('2025/4/sample.txt')
 
-Deno.test('one', () => {
+Deno.test('2025/4/one', () => {
   assertEquals(one(sample), 13)
 })
 
-Deno.test('two', () => {
+Deno.test('2025/4/two', () => {
   assertEquals(two(sample), 43)
 })
