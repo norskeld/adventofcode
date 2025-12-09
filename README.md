@@ -30,7 +30,7 @@ deno test --allow-read
 Or you can filter tests by year + day:
 
 ```bash
-deno test -R --filter 2025/5
+deno test --allow-read --filter 2025/5
 ```
 
 > [!NOTE]
