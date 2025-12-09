@@ -11,6 +11,7 @@ interface Grid {
   height: number
 }
 
+/** All 8 directions: cardinal (N/S/E/W) and diagonal. */
 const directions: Point[] = [
   [0, 1],
   [1, 0],
@@ -52,13 +53,16 @@ function findAccessibleRollPoints({ cells, width, height }: Grid): Point[] {
     for (let x = 0; x < width; x += 1) {
       const cell = cells[y][x]
 
+      // Only process roll cells, skip empty dots.
       if (cell === Cell.Roll) {
         let neighbors = 0
 
+        // Check all 8 adjacent cells to count neighboring rolls.
         for (const [directionX, directionY] of directions) {
           const neighborY = y + directionY
           const neighborX = x + directionX
 
+          // Skip neighbors outside grid bounds.
           if (
             neighborY < 0 || neighborY >= height || neighborX < 0 ||
             neighborX >= width

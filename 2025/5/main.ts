@@ -1,11 +1,3 @@
-class Range {
-  constructor(public start: number, public end: number) {}
-
-  includes(value: number): boolean {
-    return this.start <= value && value <= this.end
-  }
-}
-
 export function one(input: string): number {
   const freshIds = new Set<number>()
 
@@ -38,7 +30,7 @@ export function two(input: string): number {
     .map((range) => range.split('-').map(Number))
     .sort((a, b) => a[0] - b[0])
 
-  // Maintain a separate list of ranges that have been merged and that will be
+  // Maintain a separate list of ranges that have been merged and which will be
   // used to merge overlapping ranges.
   const mergedRanges: number[][] = [freshRanges[0]]
 
