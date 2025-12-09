@@ -8,11 +8,11 @@ async function main() {
 
   switch (command) {
     case 'scaffold':
-      assert(args.length === 2, 'Expected exactly 2 arguments: year and day')
+      assert(args.length === 2, 'Expected exactly 2 arguments: year day')
       return await scaffold(args)
 
     case 'run':
-      assert(args.length === 1, 'Expected exactly 1 argument: year')
+      assert(args.length > 1, 'Expected at least 1 argument: year [day]')
       return await runAll(args)
 
     case undefined:

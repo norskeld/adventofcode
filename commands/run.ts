@@ -40,9 +40,17 @@ async function withTiming<T>(fn: () => Promise<T>): Promise<[T, number]> {
   return [result, duration]
 }
 
-export async function runAll([year]: string[]): Promise<void> {
+export async function runAll([year, day]: string[]): Promise<void> {
   // Find all valid solutions to run
-  const solutions = await findValidSolutions(year)
+  const solutions = (await findValidSolutions(year))
+    .filter((solution) =>
+      day ? solution.main.startsWith(`${year}/${day}`) : true
+    )
+    .sort((a, b) =>
+      a.main.localeCompare(b.main, 'en', {
+        numeric: true,
+      })
+    )
 
   // Run all solutions and collect results with timings
   console.log(`Running ${year} solutions...`)
