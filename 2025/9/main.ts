@@ -1,55 +1,18 @@
-class Point {
-  constructor(public x: number, public y: number) {}
-
-  static fromCoords([x, y]: number[]): Point {
-    return new Point(x, y)
-  }
-
-  static fromKey(key: string): Point {
-    return Point.fromCoords(key.split(':').map(Number))
-  }
-
-  asKey(): string {
-    return `${this.x}:${this.y}`
-  }
+interface Point {
+  x: number
+  y: number
 }
 
-class Distance {
-  constructor(public min: number, public max: number) {}
+interface Range {
+  min: number
+  max: number
 }
 
 function parsePoints(input: string): Point[] {
-  return input.trim().split('\n').map((line) =>
-    Point.fromCoords(line.split(',').map(Number))
-  )
-}
-
-function calculateArea(p1: Point, p2: Point): number {
-  const dx = Math.abs(p2.x - p1.x) + 1
-  const dy = Math.abs(p2.y - p1.y) + 1
-
-  return dx * dy
-}
-
-function checkArea(
-  distances: Map<number, Distance>,
-  p1: Point,
-  p2: Point,
-): boolean {
-  const minX = Math.min(p1.x, p2.x)
-  const minY = Math.min(p1.y, p2.y)
-  const maxX = Math.max(p1.x, p2.x)
-  const maxY = Math.max(p1.y, p2.y)
-
-  for (let y = minY; y <= maxY; y++) {
-    const distance = distances.get(y)
-
-    if (!distance || minX < distance.min || maxX > distance.max) {
-      return false
-    }
-  }
-
-  return true
+  return input.trim().split('\n').map((line) => {
+    const [x, y] = line.split(',').map(Number)
+    return { x, y }
+  })
 }
 
 function findMaxArea(points: Point[]): number {
@@ -76,82 +39,91 @@ function findMaxArea(points: Point[]): number {
 }
 
 function findMaxAreaConstrained(points: Point[]): number {
+  const byX = new Map<number, number[]>()
+  const byY = new Map<number, number[]>()
+
+  for (const p of points) {
+    if (!byX.has(p.x)) byX.set(p.x, [])
+    byX.get(p.x)!.push(p.y)
+
+    if (!byY.has(p.y)) byY.set(p.y, [])
+    byY.get(p.y)!.push(p.x)
+  }
+
+  // Build row ranges (min/max x per y).
+  const rowRanges = new Map<number, Range>()
+
+  for (const [x, ys] of byX) {
+    if (ys.length < 2) continue
+
+    const minY = Math.min(...ys)
+    const maxY = Math.max(...ys)
+
+    for (let y = minY; y <= maxY; y++) {
+      const range = rowRanges.get(y)
+
+      if (range) {
+        range.min = Math.min(range.min, x)
+        range.max = Math.max(range.max, x)
+      } else {
+        rowRanges.set(y, {
+          min: x,
+          max: x,
+        })
+      }
+    }
+  }
+
+  for (const [y, xs] of byY) {
+    if (xs.length < 2) continue
+
+    const minX = Math.min(...xs)
+    const maxX = Math.max(...xs)
+
+    const range = rowRanges.get(y)
+
+    if (range) {
+      range.min = Math.min(range.min, minX)
+      range.max = Math.max(range.max, maxX)
+    } else {
+      rowRanges.set(y, {
+        min: minX,
+        max: maxX,
+      })
+    }
+  }
+
+  // Check all pairs of RED points only.
   let maxArea = 0
 
-  const redPoints = new Set<string>()
-  const redPointInX = new Map<number, Point[]>()
-  const redPointInY = new Map<number, Point[]>()
-  const markedPoints = new Set<string>()
-  const markedPointInY = new Map<number, Point[]>()
+  for (let i = 0; i < points.length; i++) {
+    const p1 = points[i]
 
-  for (const point of points) {
-    redPoints.add(point.asKey())
+    for (let j = i + 1; j < points.length; j++) {
+      const p2 = points[j]
 
-    if (!redPointInX.has(point.x)) redPointInX.set(point.x, [])
-    redPointInX.get(point.x)!.push(point)
+      const minX = Math.min(p1.x, p2.x)
+      const maxX = Math.max(p1.x, p2.x)
+      const minY = Math.min(p1.y, p2.y)
+      const maxY = Math.max(p1.y, p2.y)
 
-    if (!redPointInY.has(point.y)) redPointInY.set(point.y, [])
-    redPointInY.get(point.y)!.push(point)
-  }
+      // Quick area check before expensive validation.
+      const area = (maxX - minX + 1) * (maxY - minY + 1)
+      if (area <= maxArea) continue
 
-  for (const key of redPoints) {
-    const p1 = Point.fromKey(key)
+      // Check if rectangle fits within marked bounds for all rows.
+      let valid = true
 
-    for (const p2 of redPointInX.get(p1.x) ?? []) {
-      if (p1.x !== p2.x || p1.y !== p2.y) {
-        const minY = Math.min(p1.y, p2.y)
-        const maxY = Math.max(p1.y, p2.y)
+      for (let y = minY; y <= maxY && valid; y++) {
+        const range = rowRanges.get(y)
 
-        for (let py = minY; py <= maxY; py++) {
-          const point = new Point(p1.x, py)
-          markedPoints.add(point.asKey())
-
-          if (!markedPointInY.has(py)) markedPointInY.set(py, [])
-          markedPointInY.get(py)!.push(point)
+        if (!range || minX < range.min || maxX > range.max) {
+          valid = false
         }
       }
-    }
 
-    for (const p2 of redPointInY.get(p1.y) ?? []) {
-      if (p1.x !== p2.x || p1.y !== p2.y) {
-        const minX = Math.min(p1.x, p2.x)
-        const maxX = Math.max(p1.x, p2.x)
-
-        for (let px = minX; px <= maxX; px++) {
-          const point = new Point(px, p1.y)
-          markedPoints.add(point.asKey())
-
-          if (!markedPointInY.has(p1.y)) markedPointInY.set(p1.y, [])
-          markedPointInY.get(p1.y)!.push(point)
-        }
-      }
-    }
-  }
-
-  const distances = new Map<number, Distance>()
-  for (const [y, points] of markedPointInY) {
-    if (points.length < 2) continue
-
-    let minX = Infinity
-    let maxX = 0
-
-    for (const point of points) {
-      if (point.x < minX) minX = point.x
-      if (point.x > maxX) maxX = point.x
-    }
-
-    distances.set(y, new Distance(minX, maxX))
-  }
-
-  const redPointsList: Point[] = [...redPoints].map((key) => Point.fromKey(key))
-  for (const p1 of redPointsList) {
-    for (const p2 of redPointsList) {
-      if (p1.x !== p2.x || p1.y !== p2.y) {
-        const area = calculateArea(p1, p2)
-
-        if (area > maxArea && checkArea(distances, p1, p2)) {
-          maxArea = area
-        }
+      if (valid) {
+        maxArea = area
       }
     }
   }
