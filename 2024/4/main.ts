@@ -1,16 +1,30 @@
-type Coordinate = [row: number, col: number]
+type Coord = [
+  row: number,
+  col: number,
+]
 
 interface LineMatchResult {
-  start: Coordinate
-  end: Coordinate
-  direction: Coordinate
+  start: Coord
+  end: Coord
+  direction: Coord
 }
 
 interface CrossMatchResult {
-  center: Coordinate
+  center: Coord
   diag1: string
   diag2: string
 }
+
+const DIRECTIONS: Coord[] = [
+  [0, 1], // Right
+  [0, -1], // Left
+  [1, 0], // Down
+  [-1, 0], // Up
+  [1, 1], // Down-Right
+  [-1, -1], // Up-Left
+  [1, -1], // Down-Left
+  [-1, 1], // Up-Right
+]
 
 function parseGrid(input: string): string[][] {
   return input
@@ -25,33 +39,22 @@ function findLineMatches(grid: string[][], target: string): LineMatchResult[] {
   const length = target.length
   const matches: LineMatchResult[] = []
 
-  const directions: Coordinate[] = [
-    [0, 1], // Right
-    [0, -1], // Left
-    [1, 0], // Down
-    [-1, 0], // Up
-    [1, 1], // Down-Right
-    [-1, -1], // Up-Left
-    [1, -1], // Down-Left
-    [-1, 1], // Up-Right
-  ]
-
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < cols; col++) {
-      if (grid[row][col] !== target[0]) {
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (grid[r][c] !== target[0]) {
         continue
       }
 
-      for (const [dRow, dCol] of directions) {
+      for (const [dr, dc] of DIRECTIONS) {
         let found = true
 
         for (let idx = 1; idx < length; idx++) {
-          const nRow = row + dRow * idx
-          const nCol = col + dCol * idx
+          const nr = r + dr * idx
+          const nc = c + dc * idx
 
           if (
-            nRow < 0 || nRow >= rows || nCol < 0 || nCol >= cols ||
-            grid[nRow][nCol] !== target[idx]
+            nr < 0 || nr >= rows || nc < 0 || nc >= cols ||
+            grid[nr][nc] !== target[idx]
           ) {
             found = false
             break
@@ -59,13 +62,13 @@ function findLineMatches(grid: string[][], target: string): LineMatchResult[] {
         }
 
         if (found) {
-          const endRow = row + dRow * (length - 1)
-          const endCol = col + dCol * (length - 1)
+          const er = r + dr * (length - 1)
+          const ec = c + dc * (length - 1)
 
           matches.push({
-            start: [row, col],
-            end: [endRow, endCol],
-            direction: [dRow, dCol],
+            start: [r, c],
+            end: [er, ec],
+            direction: [dr, dc],
           })
         }
       }
@@ -90,9 +93,9 @@ function findCrossMatches(
     return str === target || str === revTarget
   }
 
-  for (let row = k; row < rows - k; row++) {
-    for (let col = k; col < cols - k; col++) {
-      if (grid[row][col] !== target[k]) {
+  for (let r = k; r < rows - k; r++) {
+    for (let c = k; c < cols - k; c++) {
+      if (grid[r][c] !== target[k]) {
         continue
       }
 
@@ -100,13 +103,13 @@ function findCrossMatches(
       const diag2: string[] = []
 
       for (let idx = -k; idx <= k; idx++) {
-        diag1.push(grid[row + idx][col + idx])
-        diag2.push(grid[row + idx][col - idx])
+        diag1.push(grid[r + idx][c + idx])
+        diag2.push(grid[r + idx][c - idx])
       }
 
       if (isValid(diag1) && isValid(diag2)) {
         matches.push({
-          center: [row, col],
+          center: [r, c],
           diag1: diag1.join(''),
           diag2: diag2.join(''),
         })

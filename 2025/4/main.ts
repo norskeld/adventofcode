@@ -3,93 +3,82 @@ const enum Cell {
   Dot,
 }
 
-type Point = [x: number, y: number]
-
-interface Grid {
-  cells: Cell[][]
-  width: number
-  height: number
-}
+type Coord = [
+  row: number,
+  col: number,
+]
 
 /** All 8 directions: cardinal (N/S/E/W) and diagonal. */
-const directions: Point[] = [
+const DIRECTIONS: Coord[] = [
+  [-1, 0],
   [0, 1],
   [1, 0],
   [0, -1],
-  [-1, 0],
-  [1, 1],
   [-1, 1],
+  [1, 1],
   [1, -1],
   [-1, -1],
 ]
 
-function parseGrid(input: string): Grid {
-  const cells: Cell[][] = []
+function parseGrid(input: string): Cell[][] {
+  const grid: Cell[][] = []
 
-  for (const [y, row] of input.trim().split('\n').entries()) {
-    for (const [x, char] of row.split('').entries()) {
-      if (!cells[y]) {
-        cells[y] = []
-      }
+  for (const [r, line] of input.trim().split('\n').entries()) {
+    const row: Cell[] = []
 
-      cells[y][x] = char === '@' ? Cell.Roll : Cell.Dot
+    for (const [c, char] of line.split('').entries()) {
+      row.push(char === '@' ? Cell.Roll : Cell.Dot)
     }
+
+    grid.push(row)
   }
 
-  const width = cells[0].length
-  const height = cells.length
-
-  return {
-    cells,
-    width,
-    height,
-  }
+  return grid
 }
 
-function findAccessibleRollPoints({ cells, width, height }: Grid): Point[] {
-  const accessibleRollPoints: Point[] = []
+function findAccessibleRollCoords(grid: Cell[][]): Coord[] {
+  const rows = grid.length
+  const cols = grid[0].length
+  const accessibleRollCoords: Coord[] = []
 
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const cell = cells[y][x]
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const cell = grid[r][c]
 
       // Only process roll cells, skip empty dots.
       if (cell === Cell.Roll) {
         let neighbors = 0
 
         // Check all 8 adjacent cells to count neighboring rolls.
-        for (const [directionX, directionY] of directions) {
-          const neighborY = y + directionY
-          const neighborX = x + directionX
+        for (const [dr, dc] of DIRECTIONS) {
+          const nr = r + dr
+          const nc = c + dc
 
           // Skip neighbors outside grid bounds.
-          if (
-            neighborY < 0 || neighborY >= height || neighborX < 0 ||
-            neighborX >= width
-          ) {
+          if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) {
             continue
           }
 
-          if (cells[neighborY][neighborX] === Cell.Roll) {
-            neighbors += 1
+          if (grid[nr][nc] === Cell.Roll) {
+            neighbors++
           }
         }
 
         if (neighbors < 4) {
-          accessibleRollPoints.push([x, y])
+          accessibleRollCoords.push([r, c])
         }
       }
     }
   }
 
-  return accessibleRollPoints
+  return accessibleRollCoords
 }
 
 export function one(input: string): number {
   const grid = parseGrid(input)
-  const accessiblePoints = findAccessibleRollPoints(grid)
+  const accessibleCoords = findAccessibleRollCoords(grid)
 
-  return accessiblePoints.length
+  return accessibleCoords.length
 }
 
 export function two(input: string): number {
@@ -98,19 +87,19 @@ export function two(input: string): number {
   let removed = 0
 
   while (true) {
-    const removablePoints = findAccessibleRollPoints(grid)
+    const removableCoords = findAccessibleRollCoords(grid)
 
     // Break if nothing left to remove.
-    if (removablePoints.length === 0) {
+    if (removableCoords.length === 0) {
       break
     }
 
     // Otherwise mutate grid and sweep some rolls.
-    for (const [x, y] of removablePoints) {
-      grid.cells[y][x] = Cell.Dot
+    for (const [r, c] of removableCoords) {
+      grid[r][c] = Cell.Dot
     }
 
-    removed += removablePoints.length
+    removed += removableCoords.length
   }
 
   return removed

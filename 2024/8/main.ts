@@ -19,9 +19,9 @@ function parseGrid(input: string): ParseResult {
   const cols = grid[0].length
   const antennas: Map<string, Coord[]> = new Map()
 
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < cols; col++) {
-      const freq = grid[row][col]
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const freq = grid[r][c]
 
       if (freq === '.') {
         continue
@@ -29,7 +29,7 @@ function parseGrid(input: string): ParseResult {
 
       const coords = antennas.get(freq) ?? []
 
-      coords.push([row, col])
+      coords.push([r, c])
       antennas.set(freq, coords)
     }
   }
@@ -48,24 +48,24 @@ export function one(input: string): number {
   for (const coords of antennas.values()) {
     for (let i = 0; i < coords.length; i++) {
       for (let j = i + 1; j < coords.length; j++) {
-        const [aRow, aCol] = coords[i]
-        const [bRow, bCol] = coords[j]
-        const dRow = bRow - aRow
-        const dCol = bCol - aCol
+        const [ar, ac] = coords[i]
+        const [br, bc] = coords[j]
+        const dr = br - ar
+        const dc = bc - ac
 
         // antinode <- A ←—— d ——→ B -> antinode
         // (a - d)    (a)         (b)    (b + d)
         const nodes: Coord[] = [
-          [aRow - dRow, aCol - dCol],
-          [bRow + dRow, bCol + dCol],
+          [ar - dr, ac - dc],
+          [br + dr, bc + dc],
         ]
 
-        for (const [nRow, nCol] of nodes) {
-          if (nRow < 0 || nRow >= rows || nCol < 0 || nCol >= cols) {
+        for (const [nr, nc] of nodes) {
+          if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) {
             continue
           }
 
-          antinodes.add(`${nRow}:${nCol}`)
+          antinodes.add(`${nr}:${nc}`)
         }
       }
     }
@@ -81,22 +81,22 @@ export function two(input: string): number {
   for (const coords of antennas.values()) {
     for (let i = 0; i < coords.length; i++) {
       for (let j = i + 1; j < coords.length; j++) {
-        const [aRow, aCol] = coords[i]
-        const [bRow, bCol] = coords[j]
-        const dRow = bRow - aRow
-        const dCol = bCol - aCol
+        const [ar, ac] = coords[i]
+        const [br, bc] = coords[j]
+        const dr = br - ar
+        const dc = bc - ac
 
         // Every position along the line through the pair is an antinode,
         // including the antennas themselves.
         for (const sign of [-1, 1]) {
-          let nRow = aRow
-          let nCol = aCol
+          let nr = ar
+          let nc = ac
 
-          while (nRow >= 0 && nRow < rows && nCol >= 0 && nCol < cols) {
-            antinodes.add(`${nRow}:${nCol}`)
+          while (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+            antinodes.add(`${nr}:${nc}`)
 
-            nRow += sign * dRow
-            nCol += sign * dCol
+            nr += sign * dr
+            nc += sign * dc
           }
         }
       }

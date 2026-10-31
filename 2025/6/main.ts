@@ -14,11 +14,11 @@ function rotateRight<T>(matrix: T[][]): T[][] {
   const rows = matrix.length
   const cols = matrix[0].length
 
-  for (let col = 0; col < cols; col++) {
+  for (let c = 0; c < cols; c++) {
     const reversed: T[] = []
 
-    for (let row = rows - 1; row >= 0; row--) {
-      reversed.push(matrix[row][col])
+    for (let r = rows - 1; r >= 0; r--) {
+      reversed.push(matrix[r][c])
     }
 
     result.push(reversed)

@@ -24,17 +24,17 @@ function parseGrid(input: string): ParseResult {
   const grid: number[][] = []
   const trailheads: Coord[] = []
 
-  for (const [rowIdx, rowRaw] of input.trim().split('\n').entries()) {
+  for (const [r, line] of input.trim().split('\n').entries()) {
     const row: number[] = []
 
-    for (const [colIdx, colRaw] of rowRaw.split('').entries()) {
-      const col = Number(colRaw)
+    for (const [c, char] of line.split('').entries()) {
+      const height = Number(char)
 
-      if (col === 0) {
-        trailheads.push([rowIdx, colIdx])
+      if (height === 0) {
+        trailheads.push([r, c])
       }
 
-      row.push(col)
+      row.push(height)
     }
 
     grid.push(row)
@@ -59,22 +59,22 @@ function findTrails(grid: number[][], trailhead: Coord): number {
 
   while (queue.length > 0) {
     const step = queue.shift()!
-    const [row, col] = step.coord
+    const [r, c] = step.coord
 
     if (step.currentStep === 9) {
       trailsCount++
       continue
     }
 
-    for (const [dRow, dCol] of DIRECTIONS) {
-      const nRow = row + dRow
-      const nCol = col + dCol
+    for (const [dr, dc] of DIRECTIONS) {
+      const nr = r + dr
+      const nc = c + dc
       const nStep = step.currentStep + 1
-      const nKey = `${nRow}:${nCol}`
+      const nKey = `${nr}:${nc}`
 
       if (
-        nRow < 0 || nRow >= rows || nCol < 0 || nCol >= cols ||
-        grid[nRow][nCol] !== nStep ||
+        nr < 0 || nr >= rows || nc < 0 || nc >= cols ||
+        grid[nr][nc] !== nStep ||
         visited.has(nKey)
       ) {
         continue
@@ -82,7 +82,7 @@ function findTrails(grid: number[][], trailhead: Coord): number {
 
       queue.push({
         currentStep: nStep,
-        coord: [nRow, nCol],
+        coord: [nr, nc],
       })
 
       visited.add(nKey)
@@ -105,28 +105,28 @@ function findAllTrails(grid: number[][], trailhead: Coord): number {
 
   while (queue.length > 0) {
     const step = queue.shift()!
-    const [row, col] = step.coord
+    const [r, c] = step.coord
 
     if (step.currentStep === 9) {
       trailsCount++
       continue
     }
 
-    for (const [dRow, dCol] of DIRECTIONS) {
-      const nRow = row + dRow
-      const nCol = col + dCol
+    for (const [dr, dc] of DIRECTIONS) {
+      const nr = r + dr
+      const nc = c + dc
       const nStep = step.currentStep + 1
 
       if (
-        nRow < 0 || nRow >= rows || nCol < 0 || nCol >= cols ||
-        grid[nRow][nCol] !== nStep
+        nr < 0 || nr >= rows || nc < 0 || nc >= cols ||
+        grid[nr][nc] !== nStep
       ) {
         continue
       }
 
       queue.push({
         currentStep: nStep,
-        coord: [nRow, nCol],
+        coord: [nr, nc],
       })
     }
   }

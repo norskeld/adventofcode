@@ -37,12 +37,12 @@ function parseGrid(input: string): ParseResult {
   const grid: Cell[][] = []
   let start: Coord = [0, 0]
 
-  for (const [rIdx, line] of input.trim().split('\n').entries()) {
+  for (const [r, line] of input.trim().split('\n').entries()) {
     const row: Cell[] = []
 
-    for (const [cIdx, char] of line.split('').entries()) {
+    for (const [c, char] of line.split('').entries()) {
       if (char === '^') {
-        start = [rIdx, cIdx]
+        start = [r, c]
         row.push(Cell.Guard)
       } else if (char === '#') {
         row.push(Cell.Obstacle)
@@ -65,15 +65,15 @@ function simulate(grid: Cell[][], start: Coord): SimulationResult {
   const cols = grid[0].length
 
   let directionIdx = Direction.Up
-  let [sRow, sCol] = start
+  let [r, c] = start
 
   const visitedStates: Set<string> = new Set()
   const visitedPositions: Set<string> = new Set()
 
-  visitedPositions.add(`${sRow}:${sCol}`)
+  visitedPositions.add(`${r}:${c}`)
 
   while (true) {
-    const state = `${sRow}:${sCol}:${directionIdx}`
+    const state = `${r}:${c}:${directionIdx}`
 
     if (visitedStates.has(state)) {
       return {
@@ -84,24 +84,24 @@ function simulate(grid: Cell[][], start: Coord): SimulationResult {
 
     visitedStates.add(state)
 
-    const [dRow, dCol] = DIRECTIONS[directionIdx]
-    const nRow = sRow + dRow
-    const nCol = sCol + dCol
+    const [dr, dc] = DIRECTIONS[directionIdx]
+    const nr = r + dr
+    const nc = c + dc
 
-    if (nRow < 0 || nRow >= rows || nCol < 0 || nCol >= cols) {
+    if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) {
       return {
         hasLoop: false,
         visitedPositions,
       }
     }
 
-    if (grid[nRow][nCol] == Cell.Obstacle) {
+    if (grid[nr][nc] == Cell.Obstacle) {
       directionIdx = (directionIdx + 1) % 4
     } else {
-      sRow = nRow
-      sCol = nCol
+      r = nr
+      c = nc
 
-      visitedPositions.add(`${sRow}:${sCol}`)
+      visitedPositions.add(`${r}:${c}`)
     }
   }
 }
@@ -116,29 +116,29 @@ export function one(input: string): number {
 export function two(input: string): number {
   const { grid, start } = parseGrid(input)
   const { visitedPositions } = simulate(grid, start)
-  const [sRow, sCol] = start
+  const [sr, sc] = start
 
   let loopObstaclesCount = 0
 
   for (const position of visitedPositions) {
-    const [oRow, oCol] = position.split(':').map(Number)
+    const [or, oc] = position.split(':').map(Number)
 
     // Cannot place an obstacle directly under the guard's starting position.
-    if (oRow === sRow && oCol === sCol) {
+    if (or === sr && oc === sc) {
       continue
     }
 
     // Temporarily place obstacle.
-    grid[oRow][oCol] = Cell.Obstacle
+    grid[or][oc] = Cell.Obstacle
 
     // Check if placed obstacle creates a loop.
-    const { hasLoop } = simulate(grid, [sRow, sCol])
+    const { hasLoop } = simulate(grid, [sr, sc])
 
     if (hasLoop) {
       loopObstaclesCount++
     }
 
-    grid[oRow][oCol] = Cell.Empty
+    grid[or][oc] = Cell.Empty
   }
 
   return loopObstaclesCount
