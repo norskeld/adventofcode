@@ -44,6 +44,59 @@ function getQuadrant({ x, y }: Coord, [mx, my]: [number, number]): number {
   return 0
 }
 
+function step(moves: Move[], [w, h]: [number, number]): void {
+  for (const move of moves) {
+    const npx = move.position.x + move.velocity.x
+    const npy = move.position.y + move.velocity.y
+
+    if (npx < 0) move.position.x = w + npx
+    else if (npx >= w) move.position.x = Math.abs(w - npx)
+    else move.position.x = npx
+
+    if (npy < 0) move.position.y = h + npy
+    else if (npy >= h) move.position.y = Math.abs(h - npy)
+    else move.position.y = npy
+  }
+}
+
+function hasRun(robots: Set<string>, length: number): boolean {
+  for (const robot of robots) {
+    const [x, y] = robot.split(',').map(Number)
+
+    let run = 1
+
+    for (let i = 1; i < length; i++) {
+      if (!robots.has(`${x + i},${y}`)) {
+        break
+      }
+
+      run++
+    }
+
+    if (run >= length) {
+      return true
+    }
+  }
+
+  return false
+}
+
+function render(robots: Set<string>, [w, h]: [number, number]): string {
+  const rows: string[] = []
+
+  for (let y = 0; y < h; y++) {
+    let row = ''
+
+    for (let x = 0; x < w; x++) {
+      row += robots.has(`${x},${y}`) ? '█' : ' '
+    }
+
+    rows.push(row)
+  }
+
+  return rows.join('\n')
+}
+
 export function one(input: string, [w, h]: [number, number]): number {
   const moves = parsePositions(input)
   const mx = (w - 1) / 2
@@ -52,18 +105,7 @@ export function one(input: string, [w, h]: [number, number]): number {
   const quadrants: Map<number, number> = new Map()
 
   for (let s = 1; s <= 100; s++) {
-    for (const move of moves) {
-      const npx = move.position.x + move.velocity.x
-      const npy = move.position.y + move.velocity.y
-
-      if (npx < 0) move.position.x = w + npx
-      else if (npx >= w) move.position.x = Math.abs(w - npx)
-      else move.position.x = npx
-
-      if (npy < 0) move.position.y = h + npy
-      else if (npy >= h) move.position.y = Math.abs(h - npy)
-      else move.position.y = npy
-    }
+    step(moves, [w, h])
   }
 
   for (const { position } of moves) {
@@ -78,6 +120,21 @@ export function one(input: string, [w, h]: [number, number]): number {
 }
 
 export function two(input: string, [w, h]: [number, number]): number {
+  const moves = parsePositions(input)
+
+  for (let s = 1; s <= w * h; s++) {
+    step(moves, [w, h])
+
+    const robots = new Set(
+      moves.map(({ position }) => `${position.x},${position.y}`),
+    )
+
+    if (hasRun(robots, 10)) {
+      console.log(render(robots, [w, h]))
+      return s
+    }
+  }
+
   return 0
 }
 
