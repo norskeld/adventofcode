@@ -2,7 +2,8 @@ const enum Cell {
   Empty,
   Wall,
   Box,
-  Robot,
+  BoxLeft,
+  BoxRight,
 }
 
 const enum Move {
@@ -30,30 +31,43 @@ const DIRECTIONS: Coord[] = [
   [0, -1],
 ]
 
-function parseDocument(input: string): Document {
+function parseDocument(input: string, expand: boolean): Document {
   const [mapRaw, movesRaw] = input.trim().split('\n\n')
 
   let start: Coord = [0, 0]
 
   const map: Cell[][] = mapRaw
     .split('\n')
-    .map((line, row) =>
-      [...line].map((char, col) => {
+    .map((line, row) => {
+      if (expand) {
+        line = [...line]
+          .map((char) => {
+            if (char === '#') return '##'
+            if (char === 'O') return '[]'
+            if (char === '@') return '@.'
+            return '..'
+          })
+          .join('')
+      }
+
+      return [...line].map((char, col) => {
         if (char === '@') {
           start = [row, col]
-          return Cell.Robot
+          return Cell.Empty
         }
 
         if (char === '#') return Cell.Wall
         if (char === 'O') return Cell.Box
+        if (char === '[') return Cell.BoxLeft
+        if (char === ']') return Cell.BoxRight
         return Cell.Empty
       })
-    )
+    })
 
   const moves: Move[] = movesRaw
     .replaceAll('\n', '')
     .split('')
-    .flatMap((char) => {
+    .map((char) => {
       if (char === '<') return Move.Left
       if (char === '>') return Move.Right
       if (char === '^') return Move.Top
@@ -63,46 +77,58 @@ function parseDocument(input: string): Document {
   return { map, moves, start }
 }
 
-function step(map: Cell[][], [rr, rc]: Coord, [dr, dc]: Coord): Coord {
-  const chain: Coord[] = []
+function step(map: Cell[][], robot: Coord, [dr, dc]: Coord): Coord {
+  const moving: [Cell, number, number][] = []
+  const seen = new Set<string>()
+  const stack: Coord[] = [[robot[0] + dr, robot[1] + dc]]
 
-  let row = rr + dr
-  let col = rc + dc
+  while (stack.length > 0) {
+    const [row, col] = stack.pop()!
+    const cell = map[row][col]
 
-  while (map[row][col] === Cell.Box) {
-    chain.push([row, col])
-    row += dr
-    col += dc
+    if (cell === Cell.Wall) {
+      return robot
+    }
+
+    if (cell !== Cell.Box && cell !== Cell.BoxLeft && cell !== Cell.BoxRight) {
+      continue
+    }
+
+    const key = `${row},${col}`
+
+    if (seen.has(key)) {
+      continue
+    }
+
+    seen.add(key)
+    moving.push([cell, row, col])
+
+    if (cell === Cell.BoxLeft) {
+      stack.push([row, col + 1])
+    } else if (cell === Cell.BoxRight) {
+      stack.push([row, col - 1])
+    }
+
+    stack.push([row + dr, col + dc])
   }
 
-  if (map[row][col] === Cell.Wall) {
-    return [rr, rc]
+  for (const [, row, col] of moving) {
+    map[row][col] = Cell.Empty
   }
 
-  for (let index = chain.length - 1; index >= 0; index--) {
-    const [boxRow, boxCol] = chain[index]
-    map[boxRow + dr][boxCol + dc] = Cell.Box
+  for (const [cell, row, col] of moving) {
+    map[row + dr][col + dc] = cell
   }
 
-  map[rr][rc] = Cell.Empty
-  map[rr + dr][rc + dc] = Cell.Robot
-
-  return [rr + dr, rc + dc]
+  return [robot[0] + dr, robot[1] + dc]
 }
 
-export function one(input: string): number {
-  const document = parseDocument(input)
-
-  let robot: Coord = document.start
+function score(map: Cell[][]): number {
   let sum = 0
 
-  for (const move of document.moves) {
-    robot = step(document.map, robot, DIRECTIONS[move])
-  }
-
-  for (const [row, cells] of document.map.entries()) {
+  for (const [row, cells] of map.entries()) {
     for (const [col, cell] of cells.entries()) {
-      if (cell === Cell.Box) {
+      if (cell === Cell.Box || cell === Cell.BoxLeft) {
         sum += 100 * row + col
       }
     }
@@ -111,8 +137,22 @@ export function one(input: string): number {
   return sum
 }
 
+function solve(document: Document): number {
+  let robot: Coord = document.start
+
+  for (const move of document.moves) {
+    robot = step(document.map, robot, DIRECTIONS[move])
+  }
+
+  return score(document.map)
+}
+
+export function one(input: string): number {
+  return solve(parseDocument(input, false))
+}
+
 export function two(input: string): number {
-  return 0
+  return solve(parseDocument(input, true))
 }
 
 if (import.meta.main) {

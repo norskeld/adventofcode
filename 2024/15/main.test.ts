@@ -2,12 +2,13 @@ import { assertEquals } from '@std/assert'
 
 import { one, two } from './main.ts'
 
-const sample = Deno.readTextFileSync('2024/15/sample.txt')
+const sample1 = Deno.readTextFileSync('2024/15/sample-1.txt')
+const sample2 = Deno.readTextFileSync('2024/15/sample-2.txt')
 
 Deno.test('one', () => {
-  assertEquals(one(sample), 2028)
+  assertEquals(one(sample1), 2028)
 })
 
 Deno.test('two', () => {
-  assertEquals(two(sample), 0)
+  assertEquals(two(sample2), 9021)
 })
