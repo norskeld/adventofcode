@@ -9,5 +9,5 @@ Deno.test('one', () => {
 })
 
 Deno.test('two', () => {
-  assertEquals(two(sample), 0)
+  assertEquals(two(sample, 6), '6,1')
 })

@@ -25,7 +25,7 @@ const DIRECTIONS: Coord[] = [
   [0, -1],
 ]
 
-function parseBytes(input: string, limit: number): Coord[] {
+function parseBytes(input: string, limit = Infinity): Coord[] {
   return input
     .trim()
     .split('\n')
@@ -107,8 +107,35 @@ export function one(input: string, size: number, limit: number): number {
   return search(maze)
 }
 
-export function two(input: string): number {
-  return 0
+/**
+ * Here we need to find the first byte that blocks the exit.
+ *
+ * Each byte only adds a wall, so once the exit is blocked it stays blocked.
+ * That means there's a single point where the maze flips from solvable to
+ * unsolvable.
+ *
+ * Binary search finds that point in O(log n) maze checks, which is fast enough.
+ */
+export function two(input: string, size: number): string {
+  const bytes = parseBytes(input)
+
+  let low = 0
+  let high = bytes.length
+
+  while (low < high) {
+    const mid = Math.floor((low + high) / 2)
+    const maze = buildMaze(bytes.slice(0, mid), size)
+
+    if (search(maze) === -1) {
+      high = mid
+    } else {
+      low = mid + 1
+    }
+  }
+
+  const coord = bytes[low - 1]
+
+  return coord.join(',')
 }
 
 if (import.meta.main) {
@@ -116,6 +143,6 @@ if (import.meta.main) {
 
   console.log([
     one(input, 70, 1024),
-    two(input),
+    two(input, 70),
   ])
 }
